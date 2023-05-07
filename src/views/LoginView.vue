@@ -19,16 +19,16 @@
                 <el-button class="loginBtn" type="primary" @click="submitForm(ruleFormRef)">
                     Login
                 </el-button>
-                <el-button class="loginBtn" @click="resetForm()">Reset</el-button>
+                <el-button class="loginBtn" @click="resetForm(ruleFormRef)">Reset</el-button>
             </el-form-item>
         </el-form>
     </div>
 </template>
 
 <script lang="ts">
-import {defineComponent, reactive, toRefs, ref} from 'vue'
+import {defineComponent, reactive, toRefs, ref, h} from 'vue'
 import {LoginFormData} from "@/types/login";
-import {FormInstance} from 'element-plus';
+import {ElNotification, FormInstance} from 'element-plus';
 import {Login} from '@/request/api';
 import {useRouter} from "vue-router";
 
@@ -36,8 +36,6 @@ export default defineComponent({
     setup() {
         //路由实例
         const router = useRouter()
-        //表单实例
-        const ruleFormRef = ref<FormInstance>()
         //系统名称
         const systemName = 'Back Office Management System'
         //表单数据
@@ -53,30 +51,35 @@ export default defineComponent({
                 {min: 3, max: 5, message: 'Length should be 3 to 5', trigger: 'blur'}
             ]
         }
+        //表单实例
+        const ruleFormRef = ref<FormInstance>()
         //提交表单
         const submitForm = async (formEl: FormInstance | undefined) => {
             if (!formEl) return
-            //校验表单
             await formEl.validate((valid, fields) => {
-                //校验成功
                 if (valid) {
-                    // Login(data.ruleForm).then((res: any) => {
-                    //     //将token存入sessionStorage
-                    //     sessionStorage.setItem('token', res.data.token)
-                    //     //跳转到首页
-                        router.push('/home')
-                    //     // console.log(res)
-                    // })
-                    // console.log('submit!')
+                    console.log(valid)
+                    Login(data.ruleForm).then(res => {
+                        if (res.data.username === data.ruleForm.username){
+                            // localStorage.setItem('token', res.data)
+                            router.push('/home')
+                        }else {
+                            ElNotification({
+                                title: 'Title',
+                                message: h('i', { style: 'color: teal' }, 'username or password error!'),
+                            })
+                        }
+                    })
+                    console.log('submit!')
                 } else {
                     console.log('error submit!', fields)
                 }
             })
         }
         //重置表单
-        const resetForm = () => {
-            data.ruleForm.username = ''
-            data.ruleForm.password = ''
+        const resetForm = (formEl: FormInstance | undefined) => {
+            if (!formEl) return
+            formEl.resetFields()
         }
         return {...toRefs(data), systemName, rules, resetForm, submitForm, ruleFormRef}
     }
